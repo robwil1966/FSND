@@ -8,24 +8,54 @@ from models import setup_db, Question, Category
 
 QUESTIONS_PER_PAGE = 10
 
+def paginate_questions(request, selection):
+  page = request.args.get('page', 1, type=int)
+  start =  (page - 1) * QUESTIONS_PER_PAGE
+  end = start + QUESTIONS_PER_PAGE
+
+  questions = [question.format() for question in selection]
+  current_questions = questions[start:end]
+
+  return current_questions
+
 def create_app(test_config=None):
   # create and configure the app
   app = Flask(__name__)
   setup_db(app)
+  CORS(app)
+
   
   '''
   @TODO: Set up CORS. Allow '*' for origins. Delete the sample route after completing the TODOs
   '''
+  cors = CORS(app, resources={r"*/*": {"origins": "*"}})
 
   '''
   @TODO: Use the after_request decorator to set Access-Control-Allow
   '''
+  @app.after_request
+    def after_request(response):
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization,true'))
+        response.headers.add('Access-Control-Allow-Methods', 'GET,PATCH,POST,DELETE,OPTIONS')
 
   '''
   @TODO: 
   Create an endpoint to handle GET requests 
   for all available categories.
   '''
+  @app.route('/catagories')
+  def retrieve_catagories():
+    selection = Category.query.order_by(Category.id).all()
+    current_categories = paginate_categories(request, selection)
+
+    if len(current_categories) == 0:
+      abort(404)
+
+    return jsonify({
+      'success': True,
+      'books': current_categories,
+      'total_categoriess': len(Category.query.all())
+    })
 
 
   '''
@@ -98,6 +128,23 @@ def create_app(test_config=None):
   Create error handlers for all expected errors 
   including 404 and 422. 
   '''
+  @app.errorhandler(404)
+  def not_found(error):
+    return jsonify({
+      "success": False,
+      "error": 404,
+      "message": "resource not found"
+    }) , 404
+
+  @app.errorhandler(422)
+  def unprocessable(error):
+    return jsonify({
+      "success": False,
+      "error": 422,
+      "message": "unprocessable"
+    }) , 422
+
+  
   
   return app
 
