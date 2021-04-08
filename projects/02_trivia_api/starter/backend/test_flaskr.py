@@ -24,6 +24,18 @@ class TriviaTestCase(unittest.TestCase):
             self.db.init_app(self.app)
             # create all tables
             self.db.create_all()
+
+    ### Category Tests ###
+
+    ## Get Category ##
+    def test_get_category(self):
+        res = self.client().get('/categories')
+        data = json.loads(res.data)
+
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(data['success'], True)
+        self.assertTrue(data['total_categories'])
+        self.assertEqual(data['categories'], 4)
     
     def tearDown(self):
         """Executed after reach test"""
